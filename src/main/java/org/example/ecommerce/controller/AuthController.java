@@ -58,11 +58,7 @@ public class AuthController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         ResponseCookie cookie = jwtUtils.generateJwtCookie(userDetails);
 
-        List<String> roles = new ArrayList<>();
-        for (GrantedAuthority grantedAuthority : userDetails.getAuthorities()) {
-            String authority = grantedAuthority.getAuthority();
-            roles.add(authority);
-        }
+        List<String> roles = getRolesFromUserDetails(userDetails);
 
         UserInfoResponse response = new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), roles);
         return ResponseEntity.ok()
@@ -111,6 +107,15 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
 
+    @GetMapping("/user")
+    public ResponseEntity<UserInfoResponse> getCurrentUser(Authentication authentication){
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+        List<String> roles = getRolesFromUserDetails(userDetails);
+        UserInfoResponse response = new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), roles);
+        return ResponseEntity.ok(response);
+    }
+
     private void addUser(Set<Role> roles) {
         Role userRole = roleRepository.findByRole(AppRole.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
@@ -127,6 +132,15 @@ public class AuthController {
         Role userRole = roleRepository.findByRole(AppRole.ROLE_ADMIN)
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
         roles.add(userRole);
+    }
+
+    private List<String> getRolesFromUserDetails(UserDetailsImpl userDetails) {
+        List<String> roles = new ArrayList<>();
+        for (GrantedAuthority grantedAuthority : userDetails.getAuthorities()) {
+            String authority = grantedAuthority.getAuthority();
+            roles.add(authority);
+        }
+        return roles;
     }
 
 
