@@ -2,6 +2,7 @@ package org.example.ecommerce.controller;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.apache.coyote.Response;
 import org.example.ecommerce.models.AppRole;
 import org.example.ecommerce.models.Role;
 import org.example.ecommerce.models.User;
@@ -114,6 +115,16 @@ public class AuthController {
         List<String> roles = getRolesFromUserDetails(userDetails);
         UserInfoResponse response = new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), roles);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/signout")
+    public ResponseEntity<String> signout() {
+        ResponseCookie cookie  = jwtUtils.generateCleanCookie();
+        return ResponseEntity
+                .ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body("Successfully signed out!");
+
     }
 
     private void addUser(Set<Role> roles) {
