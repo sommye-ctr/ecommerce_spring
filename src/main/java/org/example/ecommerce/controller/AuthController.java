@@ -13,7 +13,9 @@ import org.example.ecommerce.security.models.MessageResponse;
 import org.example.ecommerce.security.models.SignupRequest;
 import org.example.ecommerce.security.models.UserInfoResponse;
 import org.example.ecommerce.security.services.UserDetailsImpl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -54,7 +56,7 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
+        ResponseCookie cookie = jwtUtils.generateJwtCookie(userDetails);
 
         List<String> roles = new ArrayList<>();
         for (GrantedAuthority grantedAuthority : userDetails.getAuthorities()) {
@@ -62,8 +64,10 @@ public class AuthController {
             roles.add(authority);
         }
 
-        UserInfoResponse response = new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), jwtToken, roles);
-        return ResponseEntity.ok(response);
+        UserInfoResponse response = new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), roles);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response);
     }
 
     @PostMapping("/signup")
