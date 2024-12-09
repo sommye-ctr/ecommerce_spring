@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.ecommerce.payload.ProductDTO;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -37,6 +39,9 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "seller_id")
     private User seller;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<CartItem> cartItems;
 
     public void update(ProductDTO product) {
         this.name = product.getName() == null ? this.name : product.getName();

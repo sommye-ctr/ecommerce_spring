@@ -54,6 +54,9 @@ public class User {
     @JoinTable(name = "user_address", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "address_id"))
     private List<Address> addresses = new ArrayList<>();
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL )
+    private Cart cart;
+
     public User(String username, String email, String password) {
         this.username = username;
         this.password = password;
