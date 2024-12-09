@@ -1,7 +1,5 @@
 package org.example.ecommerce.service;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import org.example.ecommerce.exceptions.AlreadyExistsException;
 import org.example.ecommerce.exceptions.ResourceNotFoundException;
 import org.example.ecommerce.models.Cart;
@@ -14,26 +12,29 @@ import org.example.ecommerce.repositories.CartRepository;
 import org.example.ecommerce.repositories.ProductRepository;
 import org.example.ecommerce.utils.AuthUtils;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Service
 public class CartServiceImpl implements CartService {
 
-    private  ModelMapper modelMapper;
-    private ProductRepository productRepository;
-    private CartRepository cartRepository;
-    private CartItemRepository cartItemRepository;
-    private AuthUtils authUtils;
+    private final ModelMapper modelMapper;
+    private final ProductRepository productRepository;
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
+    private final AuthUtils authUtils;
 
-    @org.springframework.beans.factory.annotation.Autowired
-    public CartServiceImpl(ModelMapper modelMapper) {
+    @Autowired
+    public CartServiceImpl(ModelMapper modelMapper, ProductRepository productRepository, CartRepository cartRepository, CartItemRepository cartItemRepository, AuthUtils authUtils) {
         this.modelMapper = modelMapper;
+        this.productRepository = productRepository;
+        this.cartRepository = cartRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.authUtils = authUtils;
     }
 
     @Override

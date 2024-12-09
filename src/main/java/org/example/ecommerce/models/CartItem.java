@@ -5,21 +5,21 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
-@Table(name = "cart_items")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Entity
+@Table(name = "cart_items")
 public class CartItem {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private long id;
 
     private double discount;
+    private int quantity;
 
     @Column(name = "product_price")
     private double productPrice;
-    private int quantity;
 
     @ManyToOne
     @JoinColumn(name = "cart_id")
