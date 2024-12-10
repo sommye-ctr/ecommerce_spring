@@ -175,6 +175,34 @@ public class CartServiceImpl implements CartService {
         return modelMapper.map(savedCart, CartDTO.class);
     }
 
+    @Override
+    public CartDTO deleteProductInCart(Long cartId, Long productId) {
+        Cart cart = cartRepository.findByUserId(cartId);
+        if (cart == null) {
+            throw new ResourceNotFoundException("Cart of user cannot be found!", "userId", authUtils.loggedInUser().getId());
+        }
+
+        CartItem cartItem = cartItemRepository.findByProductIdAndCartId(productId, cartId);
+        if (cartItem == null) {
+            throw new ResourceNotFoundException("Cart item", cart.getId());
+        }
+
+        cart.getCartItems().remove(cartItem);
+
+        Cart cart1 = cartRepository.save(cart);
+        return getDTOFromCart(cart1);
+    }
+
+    private CartDTO getDTOFromCart(Cart cart) {
+        CartDTO cartDTO = new CartDTO();
+        cartDTO.setCartId(cart.getId());
+        cartDTO.setTotalPrice(cart.getTotalPrice());
+        List<Product> p = cart.getCartItems().stream().map(CartItem::getProduct).toList();
+        List<ProductDTO> productDTOList = p.stream().map(c -> modelMapper.map(c, ProductDTO.class)).toList();
+        cartDTO.setProducts(productDTOList);
+        return cartDTO;
+    }
+
     private Cart getCart() {
         Cart cart = cartRepository.findByUserId(authUtils.loggedInUser().getId());
         if (cart != null) {
