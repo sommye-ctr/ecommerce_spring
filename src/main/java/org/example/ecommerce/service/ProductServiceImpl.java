@@ -1,11 +1,16 @@
 package org.example.ecommerce.service;
 
+import jakarta.transaction.Transactional;
 import org.example.ecommerce.exceptions.AlreadyExistsException;
 import org.example.ecommerce.exceptions.ResourceNotFoundException;
+import org.example.ecommerce.models.Cart;
 import org.example.ecommerce.models.Category;
 import org.example.ecommerce.models.Product;
+import org.example.ecommerce.payload.CartDTO;
 import org.example.ecommerce.payload.ProductDTO;
 import org.example.ecommerce.payload.ProductResponse;
+import org.example.ecommerce.repositories.CartItemRepository;
+import org.example.ecommerce.repositories.CartRepository;
 import org.example.ecommerce.repositories.CategoryRepository;
 import org.example.ecommerce.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
@@ -21,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -29,16 +35,20 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final ModelMapper modelMapper;
     private final FileServiceImpl fileServiceImpl;
+    private final CartRepository cartRepository;
+    private final CartService cartService;
 
     @Value("${project.image}")
     private String path;
 
     @Autowired
-    public ProductServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ModelMapper modelMapper, FileServiceImpl fileServiceImpl) {
+    public ProductServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ModelMapper modelMapper, FileServiceImpl fileServiceImpl, CartRepository cartRepository, CartService cartService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.modelMapper = modelMapper;
         this.fileServiceImpl = fileServiceImpl;
+        this.cartRepository = cartRepository;
+        this.cartService = cartService;
     }
 
     @Override
@@ -65,6 +75,7 @@ public class ProductServiceImpl implements ProductService {
 
     }
 
+    @Transactional
     @Override
     public ProductDTO updateProduct(Long productId, ProductDTO productDTO) {
         Optional<Product> productOptional = productRepository.findById(productId);
@@ -74,6 +85,19 @@ public class ProductServiceImpl implements ProductService {
 
         productOptional.get().update(productDTO);
         productRepository.save(productOptional.get());
+
+        //UPDATING CART ITEMS
+        List<Cart> carts = cartRepository.findCartsByProductId(productId);
+
+        List<CartDTO> cartDTOs = carts.stream().map(cart -> {
+            CartDTO cartDTO = modelMapper.map(cart, CartDTO.class);
+            List<ProductDTO> products = cart.getCartItems().stream()
+                    .map(p -> modelMapper.map(p.getProduct(), ProductDTO.class)).toList();
+            cartDTO.setProducts(products);
+            return cartDTO;
+        }).toList();
+        cartDTOs.forEach(cart -> cartService.updateProductInCarts(cart.getCartId(), productId));
+
         return modelMapper.map(productOptional.get(), ProductDTO.class);
     }
 
@@ -83,6 +107,11 @@ public class ProductServiceImpl implements ProductService {
         if (productOptional.isEmpty()) {
             throw new ResourceNotFoundException("Product", productId);
         }
+
+        // DELETE cart
+        List<Cart> carts = cartRepository.findCartsByProductId(productId);
+        carts.forEach(cart -> cartService.deleteProductInCart(cart.getId(), productId));
+
         productRepository.deleteById(productId);
         return modelMapper.map(productOptional.get(), ProductDTO.class);
     }
