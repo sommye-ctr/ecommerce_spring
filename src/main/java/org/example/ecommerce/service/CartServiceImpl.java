@@ -1,6 +1,7 @@
 package org.example.ecommerce.service;
 
 import jakarta.transaction.Transactional;
+import org.example.ecommerce.exceptions.APIException;
 import org.example.ecommerce.exceptions.AlreadyExistsException;
 import org.example.ecommerce.exceptions.ResourceNotFoundException;
 import org.example.ecommerce.models.Cart;
@@ -14,9 +15,7 @@ import org.example.ecommerce.repositories.ProductRepository;
 import org.example.ecommerce.utils.AuthUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -52,10 +51,10 @@ public class CartServiceImpl implements CartService {
                     String.valueOf(productId));
         }
         if (product.getQuantity() == 0) {
-            throw new ResponseStatusException(HttpStatus.NO_CONTENT, "Product is out of stock");
+            throw new APIException("Product is out of stock");
         }
         if (product.getQuantity() < quantity) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Quantity of request exceeds that of the product stock");
+            throw new APIException("Quantity of request exceeds that of the product stock");
         }
 
         CartItem newCartItem = new CartItem();
@@ -94,23 +93,7 @@ public class CartServiceImpl implements CartService {
 
         return carts.stream()
                 .map(
-                        cart -> {
-                            CartDTO cartDTO = new CartDTO();
-                            cartDTO.setCartId(cart.getId());
-                            cartDTO.setTotalPrice(cart.getTotalPrice());
-
-                            List<ProductDTO> productDTOList = cart.getCartItems()
-                                    .stream()
-                                    .map(
-                                            c -> {
-                                                ProductDTO productDTO = modelMapper.map(c.getProduct(), ProductDTO.class);
-                                                productDTO.setQuantity(c.getQuantity());
-                                                return productDTO;
-                                            }
-                                    ).toList();
-                            cartDTO.setProducts(productDTOList);
-                            return cartDTO;
-                        }
+                        this::getDTOFromCartUpdatedQnt
                 ).toList();
     }
 
@@ -119,13 +102,7 @@ public class CartServiceImpl implements CartService {
         long userId = authUtils.loggedInUser().getId();
         Cart cart = cartRepository.findByUserId(userId);
 
-        CartDTO cartDTO = new CartDTO();
-        cartDTO.setCartId(cart.getId());
-        cartDTO.setTotalPrice(cart.getTotalPrice());
-        List<ProductDTO> cartItems = cart.getCartItems().stream().map(c -> modelMapper.map(c.getProduct(), ProductDTO.class)).toList();
-        cartDTO.setProducts(cartItems);
-
-        return cartDTO;
+        return getDTOFromCartUpdatedQnt(cart);
     }
 
     @Transactional
@@ -145,11 +122,11 @@ public class CartServiceImpl implements CartService {
         }
 
         if (quantity <= 0){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity cannot be zero or negative");
+            throw new APIException("Quantity cannot be zero or negative");
         }
 
         if (product.getQuantity() < quantity) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity of request exceeds that of the product stock");
+            throw new APIException("Quantity of request exceeds that of the product stock");
         }
 
         double valueToSub = cartItem.getProductPrice() * cartItem.getQuantity();
@@ -172,11 +149,12 @@ public class CartServiceImpl implements CartService {
 
         productDTOList.forEach(k -> k.setQuantity(quantity));
         cartDTO.setProducts(productDTOList);
-        return modelMapper.map(savedCart, CartDTO.class);
+        return cartDTO;
     }
 
+    @Transactional
     @Override
-    public CartDTO deleteProductInCart(Long cartId, Long productId) {
+    public String deleteProductInCart(Long cartId, Long productId) {
         Cart cart = cartRepository.findByUserId(cartId);
         if (cart == null) {
             throw new ResourceNotFoundException("Cart of user cannot be found!", "userId", authUtils.loggedInUser().getId());
@@ -184,13 +162,32 @@ public class CartServiceImpl implements CartService {
 
         CartItem cartItem = cartItemRepository.findByProductIdAndCartId(productId, cartId);
         if (cartItem == null) {
-            throw new ResourceNotFoundException("Cart item", cart.getId());
+            throw new ResourceNotFoundException("Cart item", cartId);
         }
 
-        cart.getCartItems().remove(cartItem);
+        cart.setTotalPrice(cart.getTotalPrice() - cartItem.getProductPrice() * cartItem.getQuantity());
 
-        Cart cart1 = cartRepository.save(cart);
-        return getDTOFromCart(cart1);
+        cartItemRepository.deleteCartItemByProductIdAndCartId(cartId, productId);
+        cartRepository.save(cart);
+        return "Product deleted successfully!";
+    }
+
+    private CartDTO getDTOFromCartUpdatedQnt(Cart cart) {
+        CartDTO cartDTO = new CartDTO();
+        cartDTO.setCartId(cart.getId());
+        cartDTO.setTotalPrice(cart.getTotalPrice());
+
+        List<ProductDTO> productDTOList = cart.getCartItems()
+                .stream()
+                .map(
+                        c -> {
+                            ProductDTO productDTO = modelMapper.map(c.getProduct(), ProductDTO.class);
+                            productDTO.setQuantity(c.getQuantity());
+                            return productDTO;
+                        }
+                ).toList();
+        cartDTO.setProducts(productDTOList);
+        return cartDTO;
     }
 
     private CartDTO getDTOFromCart(Cart cart) {

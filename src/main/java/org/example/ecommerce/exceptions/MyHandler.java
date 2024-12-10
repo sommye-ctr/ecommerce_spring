@@ -48,4 +48,11 @@ public class MyHandler {
     public ResponseEntity<APIResponse> handle(AlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new APIResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
     }
+
+    @ExceptionHandler(APIException.class)
+    public ResponseEntity<APIResponse> myAPIException(APIException e) {
+        String message = e.getMessage();
+        APIResponse apiResponse = new APIResponse(message, HttpStatus.BAD_REQUEST.value());
+        return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
+    }
 }

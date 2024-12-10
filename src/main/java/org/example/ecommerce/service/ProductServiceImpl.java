@@ -43,10 +43,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDTO addProduct(Long categoryId, ProductDTO productDTO) {
-        if (productRepository.existsById(categoryId)) {
-            throw new AlreadyExistsException("Product", productDTO.getName());
-        }
-
         Optional<Category> category = categoryRepository.findById(categoryId);
 
         if (category.isEmpty()) {
