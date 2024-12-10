@@ -9,6 +9,8 @@ import org.example.ecommerce.utils.AuthUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @AllArgsConstructor
 @Service
 public class AddressServiceImpl implements AddressService {
@@ -25,5 +27,15 @@ public class AddressServiceImpl implements AddressService {
 
         address = addressRepository.save(address);
         return modelMapper.map(address, AddressDTO.class);
+    }
+
+    @Override
+    public List<AddressDTO> getAllAddresses() {
+        List<Address> addresses = addressRepository.findAll();
+
+        return addresses
+                .stream()
+                .map(a -> modelMapper.map(a, AddressDTO.class))
+                .toList();
     }
 }
