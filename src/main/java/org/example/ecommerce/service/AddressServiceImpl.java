@@ -5,7 +5,6 @@ import org.example.ecommerce.models.Address;
 import org.example.ecommerce.models.User;
 import org.example.ecommerce.payload.AddressDTO;
 import org.example.ecommerce.repositories.AddressRepository;
-import org.example.ecommerce.repositories.UserRepository;
 import org.example.ecommerce.utils.AuthUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
