@@ -38,4 +38,10 @@ public class CartController {
         CartDTO cartDTO = cartService.getCartByUser();
         return ResponseEntity.ok(cartDTO);
     }
+
+    @PutMapping("/cart/products/{productId}/quantity/{quantity}")
+    public ResponseEntity<CartDTO> updateProductQuantity(@PathVariable Long productId, @PathVariable int quantity) {
+        CartDTO cartDTO = cartService.updateProduct(productId, quantity);
+        return ResponseEntity.ok(cartDTO);
+    }
 }
