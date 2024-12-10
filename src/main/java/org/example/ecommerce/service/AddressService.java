@@ -8,4 +8,10 @@ public interface AddressService {
     AddressDTO createAddress(AddressDTO addressDTO);
 
     List<AddressDTO> getAllAddresses();
+
+    AddressDTO getAddressById(Long id);
+
+    List<AddressDTO> getAddressesByUserId();
+
+    AddressDTO updateAddress(Long id, AddressDTO addressDTO);
 }

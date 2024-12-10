@@ -47,4 +47,14 @@ public class Address {
     @ManyToOne()
     private User user;
 
+    public void update(Address address){
+        this.id = address.getId() == 0 ? this.id : address.getId();
+        this.state = address.getState() == null ? this.state : address.getState();
+        this.buildingName = address.getBuildingName() == null ? this.buildingName : address.getBuildingName();
+        this.city = address.getCity() == null ? this.city : address.getCity();
+        this.zip = address.getZip() == null ? this.zip : address.getZip();
+        this.street = address.getStreet() == null ? this.street : address.getStreet();
+        this.country = address.getCountry() == null ? this.country : address.getCountry();
+    }
+
 }
